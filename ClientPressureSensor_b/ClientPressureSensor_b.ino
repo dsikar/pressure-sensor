@@ -13,12 +13,20 @@ void setup() {
   delay(10);                     //Baud rate prper initialization
   pinMode(13,INPUT);             //Pin D7 on NodeMcu Lua. Button to switch on and off the solenoid.
   WiFi.mode(WIFI_STA);           //NodeMcu esp12E in station mode
-  WiFi.begin("ESP_Servos");      //Connect to this SSID. In our case esp-01 SSID.  
+  WiFi.begin("ESP_Servos", "123");      //Connect to this SSID. In our case esp-01 SSID.  
 
   while (WiFi.status() != WL_CONNECTED) {      //Wait for getting IP assigned by Access Point/ DHCP. 
                                                //Our case  esp-01 as Access point will assign IP to nodemcu esp12E.
     delay(500);
-    Serial.print(".");
+    Serial.printf("Connection status: %d\n", WiFi.status());
+    /*    
+    Return codes from https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/readme.html
+    0 : WL_IDLE_STATUS when Wi-Fi is in process of changing between statuses
+    1 : WL_NO_SSID_AVAILin case configured SSID cannot be reached
+    3 : WL_CONNECTED after successful connection is established
+    4 : WL_CONNECT_FAILED if password is incorrect
+    6 : WL_DISCONNECTED if module is not configured in station mode
+     */
   }
   Serial.println("");
   Serial.println("WiFi connected");  
@@ -27,33 +35,41 @@ void setup() {
 }
 
 void loop() {
- fsrReading = analogRead(fsrAnalogPin);
- Serial.print("Analog reading = ");
- Serial.println(fsrReading);
- forceValue= String(map(fsrReading, 0, 1023, 0, 255));
- Serial.println(forceValue);
+  fsrReading = analogRead(fsrAnalogPin);
+  Serial.print("Analog reading = ");
+  Serial.println(fsrReading);
+  forceValue= String(map(fsrReading, 0, 1023, 0, 255));
+  Serial.println(forceValue);
   Serial.print("connecting to ");
   Serial.println(host);
-              // Use WiFiClient class to create TCP connections
- WiFiClient client;
-const int httpPort = 80;
-if (!client.connect("192.168.4.1", httpPort)) {
-   Serial.println("connection failed");
-     return;
-         }    
-              //Request to server to activate the led
-              client.print(String("GET ") +"/Pres/?1f="+forceValue+" HTTP/1.1\r\n" + 
-                           "Host: " + host + "\r\n" + 
-                           "Connection: close\r\n\r\n");         
-              delay(10);
-              // Read all the lines of the reply from server and print them to Serial Monitor etc
-              while(client.available()){
-                String line = client.readStringUntil('\r');
-                Serial.print(line);
-              }
-              //Close the Connection. Automatically
-              Serial.println();
-              Serial.println("closing connection");             
-         
-
+  // Use WiFiClient class to create TCP connections
+  WiFiClient client;
+  const int httpPort = 80;
+  delay(500);
+  int iConnect = 0;
+  int iConnectMaxTries = 10;
+  while (!client.connect("192.168.4.1", httpPort)) {
+    Serial.println("Connecting...");
+    delay(1000);
+    iConnect++;
+    if(iConnect > iConnectMaxTries)
+    {
+      Serial.println("Connection failed, retrying...");
+      return;
+    }
+  }    
+  //Request to server to activate the led
+  client.print(String("GET ") +"/Pres?1f="+forceValue+" HTTP/1.1\r\n" + 
+             "Host: " + host + "\r\n" + 
+             "Connection: close\r\n\r\n");         
+  delay(10);
+  // Read all the lines of the reply from server and print them to Serial Monitor etc
+  while(client.available()){
+    String line = client.readStringUntil('\r');
+    Serial.print(line);
+  }
+  //Close the Connection. Automatically
+  Serial.println();
+  Serial.println("closing connection");             
+  client.stop(); 
 }

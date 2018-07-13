@@ -10,8 +10,8 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define SERVOMAX  600 // this is the 'maximum' pulse length count (out of 4096)
 uint8_t servonum = 0;
 
-const char* ssid = "ESP_Servos";  // SSID of esp8266
-//const char* password = "123";   //
+const char* ssid = "ESP_Servos"; // "ESP_Servos";  // SSID of esp8266
+const char* password = "123";   //
 bool toggle=0;                  //Variable to switch on and off the solenoid
 ESP8266WebServer server(80);    //Specify port for TCP connection
 
@@ -68,7 +68,7 @@ void setup() {
   delay(200);                           //Stable Wifi
   Serial.begin(115200);                 //Set Baud Rate
   pinMode(2, OUTPUT);                   //Led/Solenoid at pin 2
-  WiFi.softAP(ssid);//, password);      //In Access Point Mode
+  WiFi.softAP(ssid, password);      //In Access Point Mode
 
   IPAddress myIP = WiFi.softAPIP();     //Check the IP assigned. Put this Ip in the client host.
   Serial.print("AP IP address: ");
